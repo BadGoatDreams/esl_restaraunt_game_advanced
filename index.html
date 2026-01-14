@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🍽️ Restaurant Club (TJ Edition)</title>
+    <style>
+        /* --- MOBILE CORE STYLES --- */
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #f0f2f5; 
+            color: #333; 
+            margin: 0; 
+            padding: 0; 
+            overflow-x: hidden; 
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .game-container { 
+            max-width: 100%; 
+            margin: 10px auto; 
+            padding: 0 15px; 
+            padding-bottom: 80px; 
+        }
+
+        /* --- BIGGER CARDS FOR MOBILE --- */
+        .card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            margin-bottom: 20px; 
+            border-top: 6px solid #bdc3c7; 
+        }
+
+        /* --- BUTTONS --- */
+        .btn { 
+            display: block; 
+            width: 100%; 
+            padding: 16px; 
+            margin: 10px 0; 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 1.2em; 
+            cursor: pointer; 
+            text-align: center; 
+            font-weight: bold; 
+            touch-action: manipulation;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-green { background: #27ae60; } 
+        .btn-red { background: #e74c3c; } 
+        .btn-gold { background: #f1c40f; color: #000; } 
+        .btn-dark { background: #2c3e50; } 
+        .btn-purple { background: #8e44ad; } 
+
+        /* --- UTILITIES --- */
+        .hidden { display: none !important; }
+        .stat-row { 
+            display: flex; 
+            justify-content: space-between; 
+            border-bottom: 2px solid #eee; 
+            padding: 12px 0; 
+            font-size: 1.1em;
+        }
+        .flavor-text { 
+            font-style: italic; 
+            color: #555; 
+            background: #fff3cd; 
+            padding: 12px; 
+            border-radius: 8px; 
+            border-left: 5px solid #f1c40f; 
+            margin-top: 15px;
+            font-size: 1em;
+        }
+
+        /* --- UPDATED MENU GRID (Tighter & Bigger Text) --- */
+        .menu-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; /* 2 Columns */
+            gap: 8px; /* Tighter gap */
+            margin-top: 15px; 
+        }
+        .menu-item { 
+            background: #ecf0f1; 
+            padding: 12px 5px; /* Reduced padding height */
+            border-radius: 8px; 
+            text-align: center; 
+            border: 2px solid #bdc3c7; 
+            font-size: 1.1em; /* Larger text */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            /* Removed fixed min-height to fit text naturally */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.1s, background 0.2s;
+            cursor: pointer;
+        }
+        .menu-item:active { background: #bdc3c7; transform: scale(0.98); }
+        
+        /* Make price look distinct */
+        .menu-price {
+            font-size: 0.9em;
+            color: #27ae60;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        /* --- PAYMENT OVERLAY --- */
+        #payment-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9); z-index: 2000; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+        }
+        .pay-box { 
+            background: white; padding: 30px; border-radius: 20px; 
+            width: 85%; text-align: center; 
+        }
+        .pay-input { 
+            font-size: 2.5em; width: 100%; padding: 15px; margin: 20px 0; 
+            text-align: center; border: 3px solid #3498db; border-radius: 12px; 
+            box-sizing: border-box; 
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes flashSuccess { 0% { background: #2ecc71; } 100% { background: #f0f2f5; } }
+        @keyframes flashFail { 0% { background: #e74c3c; } 100% { background: #f0f2f5; } }
+        .flash-green { animation: flashSuccess 0.8s ease-out; }
+        .flash-red { animation: flashFail 0.8s ease-out; }
+
+        /* --- SLIDE DECK --- */
+        #slide-deck-view { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: #2c3e50; z-index: 1000; overflow: hidden; 
+        }
+        .slide { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            background: #ecf0f1; transition: transform 0.3s; transform: translateX(100%); 
+            padding: 10px; box-sizing: border-box; text-align: center;
+        }
+        .slide.active { transform: translateX(0); }
+        .slide.prev { transform: translateX(-100%); }
+        
+        .slide h1 { font-size: 2em; color: #2980b9; margin-bottom: 15px; line-height: 1.1; }
+        .slide ul { 
+            font-size: 1.3em; 
+            line-height: 1.4; 
+            text-align: left; 
+            padding-left: 10px; 
+            list-style-type: none; 
+            width: 95%;
+        }
+        .slide li { margin-bottom: 12px; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px;}
+        
+        /* Translation Style */
+        .ru { color: #7f8c8d; font-size: 0.85em; display: block; margin-top: 2px; font-weight: normal; }
+
+        .controls { 
+            position: absolute; bottom: 20px; width: 100%; 
+            display: flex; justify-content: center; gap: 15px; z-index: 1010; 
+        }
+        .controls button { 
+            padding: 15px 30px; font-size: 1.5em; border-radius: 50px; 
+            border: none; background: rgba(0,0,0,0.5); color: white; 
+        }
+
+        /* Wallet */
+        .wallet-display { 
+            background: #2c3e50; color: #2ecc71; padding: 20px; 
+            border-radius: 15px; text-align: center; margin-bottom: 20px; 
+            border: 3px solid #34495e;
+        }
+        .wallet-amount { font-size: 3em; font-weight: bold; font-family: monospace; }
+        
+    </style>
+</head>
+<body>
+
+    <div id="payment-overlay" class="hidden">
+        <div class="pay-box">
+            <h2>💳 Enter Amount</h2>
+            <p>How much did the waiter say?</p>
+            <input type="number" id="pay-amount" class="pay-input" placeholder="$0">
+            <button class="btn btn-green" onclick="processPayment()">💸 TAP TO PAY</button>
+            <button class="btn btn-red" onclick="closePayment()">❌ Cancel</button>
+        </div>
+    </div>
+
+    <div id="slide-deck-view" class="hidden">
+        
+        <div class="slide active" style="background: #e67e22; color: white;">
+            <h1 style="color:white; font-size: 3em;">🍽️ Restaurant<br>Master 🍷</h1>
+            <p style="font-size: 1.5em;">Vocabulary Booster<br><span style="font-size:0.7em">(English / Русский)</span></p>
+        </div>
+
+        <div class="slide">
+            <h1>🗣️ Useful Phrases</h1>
+            <ul>
+                <li>🙋‍♂️ <strong>"Excuse me!"</strong> <span class="ru">Извините!</span></li>
+                <li>📝 <strong>"Can I order?"</strong> <span class="ru">Можно заказать?</span></li>
+                <li>🥡 <strong>"To go, please."</strong> <span class="ru">С собой, пожалуйста.</span></li>
+                <li>🧾 <strong>"The bill, please."</strong> <span class="ru">Счёт, пожалуйста.</span></li>
+            </ul>
+        </div>
+
+        <div class="slide" style="background: #d4efdf;">
+            <h1>☪️ Halal & Diet</h1>
+            <ul>
+                <li>🍖 <strong>"Is this Halal?"</strong> <span class="ru">Это халяль?</span></li>
+                <li>🥓 <strong>"Does this have pork?"</strong> <span class="ru">Здесь есть свинина?</span></li>
+                <li>🍷 <strong>"Does this have alcohol?"</strong> <span class="ru">Здесь есть алкоголь?</span></li>
+                <li>🥜 <strong>"I am allergic to..."</strong> <span class="ru">У меня аллергия на...</span></li>
+            </ul>
+        </div>
+
+        <div class="slide" style="background: #dff9fb;">
+            <h1>🍽️ On The Table</h1>
+            <ul>
+                <li>🍽️ <strong>Plate</strong> <span class="ru">Тарелка</span></li>
+                <li>🥣 <strong>Bowl</strong> <span class="ru">Миска / Чашка</span></li>
+                <li>🍴 <strong>Silverware</strong> <span class="ru">Приборы (вилка/ложка)</span></li>
+                <li>🧻 <strong>Napkin</strong> <span class="ru">Салфетка</span></li>
+                <li>🥤 <strong>Coaster</strong> <span class="ru">Подставка (под кружку)</span></li>
+            </ul>
+        </div>
+
+        <div class="slide" style="background: #dff9fb;">
+            <h1>🥛 Cups & Glasses</h1>
+            <ul>
+                <li>🥃 <strong>Glass</strong> <span class="ru">Стакан (вода/сок)</span></li>
+                <li>☕ <strong>Mug</strong> <span class="ru">Кружка (кофе/чай)</span></li>
+                <li>🏺 <strong>Pitcher</strong> <span class="ru">Кувшин</span></li>
+                <li>🥤 <strong>Straw</strong> <span class="ru">Трубочка</span></li>
+                <li>🍾 <strong>Bottle</strong> <span class="ru">Бутылка</span></li>
+            </ul>
+        </div>
+
+        <div class="slide" style="background: #fadbd8;">
+            <h1>🥩 Meat / Protein</h1>
+            <ul>
+                <li>🍗 <strong>Chicken</strong> <span class="ru">Курица</span></li>
+                <li>🥩 <strong>Beef</strong> <span class="ru">Говядина</span></li>
+                <li>🐑 <strong>Lamb</strong> <span class="ru">Баранина</span></li>
+                <li>🐟 <strong>Fish</strong> <span class="ru">Рыба</span></li>
+                <li>🐷 <strong>Pork</strong> <span class="ru">Свинина (Not Halal ⛔)</span></li>
+            </ul>
+        </div>
+
+        <div class="slide" style="background: #d5f5e3;">
+            <h1>🥗 Sides & Carbs</h1>
+            <ul>
+                <li>🥬 <strong>Salad</strong> <span class="ru">Салат</span></li>
+                <li>🍚 <strong>Rice</strong> <span class="ru">Рис</span></li>
+                <li>🥖 <strong>Bread</strong> <span class="ru">Хлеб / Лепёшка</span></li>
+                <li>🥔 <strong>Potatoes</strong> <span class="ru">Картошка</span></li>
+                <li>🍜 <strong>Noodles</strong> <span class="ru">Лапша</span></li>
+            </ul>
+        </div>
+
+        <div class="slide" style="background: #fdebd0;">
+            <h1>🔥 How is it cooked?</h1>
+            <ul>
+                <li>🍟 <strong>Fried</strong> <span class="ru">Жареное (в масле)</span></li>
+                <li>🔥 <strong>Grilled</strong> <span class="ru">На гриле / Шашлык</span></li>
+                <li>🥔 <strong>Roasted</strong> <span class="ru">Запеченное</span></li>
+                <li>💧 <strong>Boiled</strong> <span class="ru">Вареное</span></li>
+                <li>🥗 <strong>Raw</strong> <span class="ru">Сырое</span></li>
+            </ul>
+        </div>
+
+        <div class="slide" style="background: #ebdef0;">
+            <h1>🧂 Extras & Flavors</h1>
+            <ul>
+                <li>🧂 <strong>Salt / Pepper</strong> <span class="ru">Соль / Перец</span></li>
+                <li>🍅 <strong>Sauce</strong> <span class="ru">Соус</span></li>
+                <li>🌶️ <strong>Spicy</strong> <span class="ru">Острое</span></li>
+                <li>🍋 <strong>Sour</strong> <span class="ru">Кислое</span></li>
+                <li>🍬 <strong>Sweet</strong> <span class="ru">Сладкое</span></li>
+            </ul>
+        </div>
+
+        <div class="slide" style="background: #2c3e50; color: #f1c40f;">
+            <h1 style="color: #e74c3c;">🚨 HEALTH INSPECTOR</h1>
+            <ul>
+                <li>👮 <strong>I am watching...</strong> <span class="ru">Я наблюдаю...</span></li>
+                <li>🗣️ <strong>Speak English!</strong> <span class="ru">Говорите по-английски!</span></li>
+                <li>🚫 <strong>No "I want eat"</strong> <span class="ru">Не говорите так!</span></li>
+                <li>💸 <strong>Bad grammar = FINE!</strong> <span class="ru">Плохая грамматика = ШТРАФ!</span></li>
+            </ul>
+        </div>
+
+        <div class="controls">
+            <button onclick="changeSlide(-1)">⬅️</button>
+            <button onclick="changeSlide(1)">➡️</button>
+            <button style="background: #c0392b;" onclick="closeSlides()">❌ PLAY</button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        
+        <div id="setup" class="card">
+            <h1>👨‍🍳 Choose Role 👩‍💼</h1>
+            <button class="btn btn-purple" onclick="showSlides()">📽️ Show Vocabulary (Словарь)</button>
+            <hr>
+            <button class="btn" onclick="generateCustomer()">🙍 I am a Customer (Клиент)</button>
+            <button class="btn btn-dark" onclick="showRestaurantList()">🍷 I am a Waiter (Официант)</button>
+        </div>
+
+        <div id="customer-view" class="card hidden">
+            <h2>👛 My Wallet</h2>
+            
+            <div class="wallet-display">
+                <div style="font-size: 0.8em; opacity: 0.8;">CURRENT BALANCE</div>
+                <div class="wallet-amount">$<span id="wallet-balance">0</span></div>
+            </div>
+
+            <div id="customer-stats"></div>
+            
+            <p class="flavor-text"><strong>Mission:</strong> Find a table. Use the vocabulary slides to order correctly. Don't run out of money!</p>
+
+            <button class="btn btn-green" style="margin-top: 30px; padding: 25px; font-size: 1.5em; box-shadow: 0 4px 0 #1e8449;" onclick="openPayment()">💳 PAY BILL HERE</button>
+            
+            <button class="btn btn-dark" style="margin-top: 20px;" onclick="location.reload()">🔄 New Character</button>
+        </div>
+
+        <div id="restaurant-list" class="card hidden">
+            <h2>Select Restaurant</h2>
+            <div id="rest-buttons"></div>
+            <button class="btn btn-dark" onclick="startPolice()">🚨 Health Inspector (Grammar)</button>
+            <button class="btn btn-red" style="margin-top:20px" onclick="location.reload()">⬅️ Back</button>
+        </div>
+
+        <div id="restaurant-dash" class="card hidden">
+            <h2 id="rest-title" style="font-size: 2.2em;"></h2>
+            
+            <div class="stat-row">
+                <span>👥 Served: <strong id="served-count">0</strong></span>
+                <span>💰 Till: $<strong id="money-made">0</strong></span>
+            </div>
+
+            <hr>
+            <h3>📝 Order Pad</h3>
+            <div id="menu-area" class="menu-grid"></div>
+            
+            <div style="background: #2c3e50; color: white; padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center;">
+                <div style="font-size: 1.2em;">Current Bill:</div>
+                <div style="font-size: 3em; font-weight: bold; color: #f1c40f;">$<span id="current-bill">0</span></div>
+                
+                <div style="display:flex; gap: 10px; margin-top: 15px;">
+                    <button class="btn btn-red" style="margin:0;" onclick="clearBill()">❌ Clear</button>
+                    <button class="btn btn-green" style="margin:0;" onclick="cashOut()">✅ Show Total</button>
+                </div>
+            </div>
+            <button class="btn btn-dark" style="margin-top:30px" onclick="location.reload()">🔄 Close Shop</button>
+        </div>
+
+        <div id="police-dash" class="card hidden" style="background: #2c3e50; color: white;">
+            <h2 style="color: #f1c40f;">🚨 INSPECTOR</h2>
+            <p style="font-size: 1.2em;">Walk around. Listen for mistakes.</p>
+            
+            <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 20px 0;">
+                <strong>👂 Common Mistakes:</strong>
+                <ul style="text-align: left; font-size: 1.1em;">
+                    <li>"I want..." (Rude)</li>
+                    <li>"Give me..." (Rude)</li>
+                    <li>"It is delicious" (Should be "It WAS")</li>
+                </ul>
+            </div>
+
+            <h3>📉 Fines: <span id="fine-count" style="color: #e74c3c; font-size: 2em;">0</span></h3>
+            <button class="btn btn-red" onclick="issueFine()">🎫 ISSUE TICKET ($50)</button>
+            <button class="btn" style="margin-top:20px" onclick="location.reload()">🔄 Resign</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATA ---
+        const restaurants = [
+            { 
+                name: "Le Petit Snob", 
+                emoji: "🍷", 
+                menu: [
+                    {name: "🐌 Escargots", price: 25}, 
+                    {name: "🥩 Steak Tartare", price: 45}, 
+                    {name: "🦞 Lobster Bisque", price: 35}, 
+                    {name: "🍄 Truffle Pasta", price: 50}, 
+                    {name: "🍷 Vintage Wine", price: 150},
+                    {name: "💧 Fancy Water", price: 12}, 
+                    {name: "🐟 Caviar Spoon", price: 90},
+                    {name: "🍮 Crème Brûlée", price: 20}
+                ] 
+            },
+            { 
+                name: "Grease Bucket", 
+                emoji: "🍔", 
+                menu: [
+                    {name: "🍔 Mega Burger", price: 8}, 
+                    {name: "🍟 Soggy Fries", price: 3}, 
+                    {name: "🥤 Cola (Liter)", price: 4}, 
+                    {name: "🍗 Mystery Nuggets", price: 2},
+                    {name: "🧅 Onion Rings", price: 4},
+                    {name: "🍦 Milkshake", price: 5},
+                    {name: "🌶️ Hot Wings", price: 7},
+                    {name: "🍗 Family Bucket", price: 25}
+                ] 
+            },
+            { 
+                name: "Luigi's", 
+                emoji: "🍕", 
+                menu: [
+                    {name: "🍕 Pepperoni Pizza", price: 18}, 
+                    {name: "🍝 Spaghetti", price: 16}, 
+                    {name: "🥖 Garlic Bread", price: 8}, 
+                    {name: "🥤 Soda", price: 3},
+                    {name: "🥘 Lasagna", price: 20},
+                    {name: "🦑 Calamari", price: 12},
+                    {name: "🍧 Gelato (Ice Cream)", price: 6},
+                    {name: "🥗 Caesar Salad", price: 10}
+                ] 
+            },
+            { 
+                name: "Hipster Kale", 
+                emoji: "🥗", 
+                menu: [
+                    {name: "🥑 Avo Toast", price: 22}, 
+                    {name: "🍳 Tofu Scramble", price: 19}, 
+                    {name: "🍏 Green Juice", price: 12}, 
+                    {name: "☕ Oat Latte", price: 8},
+                    {name: "🫐 Acai Bowl", price: 15},
+                    {name: "🥗 Quinoa Salad", price: 16},
+                    {name: "🍵 Matcha Tea", price: 7},
+                    {name: "🌯 Veggie Wrap", price: 14}
+                ] 
+            }
+        ];
+
+        const personas = [
+            { type: "Student", budget: 30, trait: "Starving 😫" },
+            { type: "Rich Tourist", budget: 300, trait: "Loves photos 📸" },
+            { type: "Vegan", budget: 60, trait: "Very picky 🥦" },
+            { type: "Business Man", budget: 150, trait: "In a rush ⌚" },
+            { type: "Grandma", budget: 35, trait: "Hates noise 👵" }
+        ];
+
+        // --- CUSTOMER & WALLET LOGIC ---
+        let myBalance = 0;
+
+        function generateCustomer() {
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('customer-view').classList.remove('hidden');
+            
+            const p = personas[Math.floor(Math.random() * personas.length)];
+            myBalance = p.budget + Math.floor(Math.random() * 10);
+
+            document.getElementById('wallet-balance').innerText = myBalance;
+            
+            const html = `
+                <div class="stat-row"><span class="stat-label">🎭 Role:</span> <strong>${p.type}</strong></div>
+                <div class="stat-row"><span class="stat-label">💡 Trait:</span> ${p.trait}</div>
+            `;
+            document.getElementById('customer-stats').innerHTML = html;
+        }
+
+        // --- PAYMENT LOGIC ---
+        function openPayment() {
+            document.getElementById('payment-overlay').classList.remove('hidden');
+            document.getElementById('pay-amount').value = '';
+            document.getElementById('pay-amount').focus();
+        }
+
+        function closePayment() {
+            document.getElementById('payment-overlay').classList.add('hidden');
+        }
+
+        function processPayment() {
+            const amount = parseInt(document.getElementById('pay-amount').value);
+            
+            if (!amount || amount <= 0) {
+                alert("Enter a number!");
+                return;
+            }
+
+            if (amount > myBalance) {
+                // FAILED
+                closePayment();
+                document.body.classList.add('flash-red');
+                setTimeout(() => document.body.classList.remove('flash-red'), 800);
+                alert("🚫 CARD DECLINED!\nYou need more money. Offer to wash dishes!");
+            } else {
+                // SUCCESS
+                myBalance -= amount;
+                document.getElementById('wallet-balance').innerText = myBalance;
+                closePayment();
+                
+                // Flash Green
+                document.body.classList.add('flash-green');
+                setTimeout(() => document.body.classList.remove('flash-green'), 800);
+                
+                setTimeout(() => alert(`✅ PAID $${amount}!\nRemaining: $${myBalance}`), 200);
+            }
+        }
+
+        // --- RESTAURANT SELECTION ---
+        function showRestaurantList() {
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('restaurant-list').classList.remove('hidden');
+            const container = document.getElementById('rest-buttons');
+            container.innerHTML = '';
+            
+            restaurants.forEach((r, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn';
+                if(index === 0) btn.classList.add('btn-gold');
+                else if(index === 1) btn.classList.add('btn-red');
+                else if(index === 3) btn.classList.add('btn-green');
+                
+                btn.innerHTML = `${r.emoji} ${r.name}`;
+                btn.onclick = () => startRestaurant(index);
+                container.appendChild(btn);
+            });
+        }
+
+        // --- RESTAURANT MANAGEMENT ---
+        let currentBill = 0;
+        let totalSales = 0;
+        let customersServed = 0;
+
+        function startRestaurant(index) {
+            document.getElementById('restaurant-list').classList.add('hidden');
+            document.getElementById('restaurant-dash').classList.remove('hidden');
+            
+            const r = restaurants[index];
+            document.getElementById('rest-title').innerHTML = `${r.emoji} ${r.name}`;
+
+            const menuContainer = document.getElementById('menu-area');
+            menuContainer.innerHTML = '';
+            r.menu.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'menu-item';
+                // HTML injection here ensures formatting inside button
+                div.innerHTML = `<span>${item.name}</span><span class="menu-price">$${item.price}</span>`;
+                div.onclick = () => addToBill(item.price);
+                menuContainer.appendChild(div);
+            });
+        }
+
+        function addToBill(amount) {
+            currentBill += amount;
+            document.getElementById('current-bill').innerText = currentBill;
+        }
+
+        function clearBill() {
+            currentBill = 0;
+            document.getElementById('current-bill').innerText = 0;
+        }
+
+        function cashOut() {
+            if(currentBill === 0) return;
+            // Auto-Tip 15%
+            const tip = Math.floor(currentBill * 0.15);
+            const total = currentBill + tip;
+            
+            alert(`🧾 TOTAL: $${total}\n(Food: $${currentBill} + Tip: $${tip})\n\nShow this to the customer!`);
+            
+            totalSales += total;
+            customersServed++;
+            document.getElementById('money-made').innerText = totalSales;
+            document.getElementById('served-count').innerText = customersServed;
+            clearBill();
+        }
+
+        // --- POLICE LOGIC ---
+        let fines = 0;
+        function startPolice() {
+            document.getElementById('restaurant-list').classList.add('hidden');
+            document.getElementById('police-dash').classList.remove('hidden');
+        }
+
+        function issueFine() {
+            fines++;
+            document.getElementById('fine-count').innerText = fines;
+            alert("👮 TICKET ISSUED! \nPenalty: $50");
+        }
+
+        // --- SLIDE LOGIC ---
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const slideDeck = document.getElementById('slide-deck-view');
+
+        function showSlides() { slideDeck.classList.remove('hidden'); }
+        function closeSlides() { slideDeck.classList.add('hidden'); }
+        
+        function changeSlide(dir) {
+            slides[currentSlide].classList.remove('active');
+            slides[currentSlide].classList.add(dir > 0 ? 'prev' : 'next');
+            if(dir < 0) slides[currentSlide].classList.remove('prev');
+
+            currentSlide += dir;
+            if (currentSlide >= slides.length) currentSlide = 0;
+            if (currentSlide < 0) currentSlide = slides.length - 1;
+
+            slides.forEach(s => { s.classList.remove('active', 'prev'); s.style.transform = ''; });
+            slides[currentSlide].classList.add('active');
+            for(let i=0; i<currentSlide; i++) slides[i].classList.add('prev');
+        }
+    </script>
+</body>
+</html>
